@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Roadmaps } from "$lib/types/roadmap";
+	import { resolve } from "$app/paths";
 	import { onMount } from "svelte";
 
   let roadmaps: Roadmaps[] = $state([]);
@@ -41,7 +42,9 @@
     <ul>
       {#each roadmaps as roadmap (roadmap.id)}
         <li class="border border-solid border-[#ddd] rounded-[8px] p-4 mb-4 list-none">
-          <h3 class="mt-0 text-[#ff3e00]">{roadmap.title}</h3>
+          <a href={resolve('/roadmap/[id]', { id: String(roadmap.id) })}>
+            <h3 class="mt-0 text-[#ff3e00]">{roadmap.title}</h3>
+          </a>
           <p>{roadmap.description}</p>
           <small>생성일: {new Date(roadmap.createdAt).toLocaleDateString()}</small>
         </li>
