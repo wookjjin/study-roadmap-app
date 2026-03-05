@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { Roadmaps } from "$lib/types/roadmap";
-	import { resolve } from "$app/paths";
-	import { onMount } from "svelte";
+	import type { Roadmaps } from '$lib/types/roadmap';
+	import { resolve } from '$app/paths';
+	import { onMount } from 'svelte';
 
   let roadmaps: Roadmaps[] = $state([]);
   let newTitle = $state('')
@@ -12,7 +12,7 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: newTitle, description: newDescription })
-    })
+    });
 
     if (response.ok) {
       console.log('등록 성공')
@@ -28,7 +28,6 @@
     }
     else {
       console.error('데이터를 불러오는데 실패했습니다.');
-      
     }
   })
 </script>

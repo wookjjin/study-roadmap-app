@@ -1,16 +1,18 @@
 <script lang="ts">
-	import type { RoadmapDetail ,RoadmapNode} from "$lib/types/roadmap";
-	import type { PageProps } from "./$types";
-	import { resolve } from "$app/paths";
-	import { onMount } from "svelte";
-	import { flip } from "svelte/animate";
-	import { slide } from "svelte/transition";
-	import { goto } from "$app/navigation";
+	import type { RoadmapDetail ,RoadmapNode} from '$lib/types/roadmap';
+	import type { PageProps } from './$types';
+	import { resolve } from '$app/paths';
+	import { onMount } from 'svelte';
+	import { flip } from 'svelte/animate';
+	import { slide } from 'svelte/transition';
+	import { goto } from '$app/navigation';
 
 	let { params }: PageProps = $props();
 	let roadmap: RoadmapDetail | undefined = $state();
   let nodeTitle = $state();
   let nodeContent = $state();
+  let draggingNodeIndex: number | null = $state(null);
+  let hoverNodeIndex: number | null = $state(null);
 
   const deleteRoadmap = async () => {
     try {
@@ -74,7 +76,7 @@
   }
 
   const handleDeleteNode = (nodeId: number) => {
-    if (!confirm("선택한 학습 노드를 정말 삭제하시겠어요?")) {
+    if (!confirm('선택한 학습 노드를 정말 삭제하시겠어요?')) {
       return;
     }
     deleteNode(nodeId)
@@ -96,6 +98,48 @@
     }
   }
 
+  const updateNodeOrder = async () => {
+    const nodeList = roadmap?.nodes.map(n => n.id)
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/roadmaps/${roadmap?.id}/nodes/reorder`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({nodeList}) // [10, 8, 11, 9] 형태
+        });
+
+        if (!response.ok) throw new Error('순서 저장 실패');
+    } catch (error) {
+      console.error(error);
+      
+    }
+  }
+
+  const onDrageStart = (index: number) => {
+    draggingNodeIndex = index
+  }
+
+  const onDragOver = (e: Event, index: number) => {
+    e.preventDefault()
+    hoverNodeIndex = index
+  }
+
+  const onDrop = (index: number) => {
+    const from = draggingNodeIndex
+    const to = index
+    
+    if (!roadmap?.nodes || from === null) return;
+    const newNodes = [...roadmap.nodes];
+    const [movedItem] = newNodes.splice(from, 1);
+    newNodes.splice(to, 0, movedItem);
+
+    roadmap.nodes = newNodes;
+
+    draggingNodeIndex = null;
+    hoverNodeIndex = null;
+
+    updateNodeOrder()
+  }
 	onMount(async () => {
     try {
       const response = await fetch(`http://localhost:8080/api/roadmaps/${params.id}`);
@@ -127,15 +171,24 @@
       <h3>학습 노드</h3>
       {#if roadmap.nodes && !!roadmap.nodes.length}
         <ul class="list-none p-0">
-          {#each roadmap.nodes as node (node.id)}
-            <li class="flex gap-4 p-4 border border-solid border-[#eee] rounded-[8px] mb-2 items-start {node.isCompleted ? 'bg-[#f0fff0] border-[#90ee90]' : ''}"
+          {#each roadmap.nodes as node, i (node.id)}
+            <li class="flex gap-4 p-4 border border-solid border-[#eee] rounded-[8px] mb-2 items-start 
+              {node.isCompleted ? 'bg-[#f0fff0] border-[#90ee90]' : ''}
+              {draggingNodeIndex === i ? 'opacity-[0.4] border border-dashed border-[#4A90E2]' : ''}
+              {hoverNodeIndex === i ? 'border-t-[3px] border-solid border-[#4A90E2] translate-y-[2px]':''}
+            "
               animate:flip={{ duration: 300 }}
               transition:slide={{ duration: 300 }}
+              draggable="true"
+              ondragstart={() => onDrageStart(i)}
+              ondragover={(e) => onDragOver(e, i)}
+              ondragleave={() => hoverNodeIndex = null}
+              ondrop={() => onDrop(i)}
             >
               <input class="mt-[0.3rem] transform-scale-[1.2]" type="checkbox" checked={node.isCompleted} onchange={() => handleToggle(node)} />
               <div>
                 <div class="flex gap-4">
-                  <strong class="block text-size[1rem]">{node.title}</strong>
+                  <strong class="block text-size[1rem]">⠿ {node.title}</strong>
                   <button onclick={() => handleDeleteNode(node.id)}>삭제</button>
                 </div>
                 <p class="mt-[0.2rem] mx-0 mb-0 text-size-[0.9rem] text-[#555]">{node.content || '상세 설명이 없습니다.'}</p>
