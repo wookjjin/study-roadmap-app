@@ -18,13 +18,13 @@
     try {
       const response = await fetch(`http://localhost:8080/api/roadmaps/${roadmap?.id}`, {
         method: 'DELETE'
-      })
+      });
 
       if (response.ok) {
-        goto(resolve('/'))
+        goto(resolve('/'));
       }
       else {
-        throw new Error('삭제 실패')
+        throw new Error('삭제 실패');
       }
     } catch (error) {
       console.error(error);
@@ -34,9 +34,9 @@
   const handleDeleteRoadmap = () => {
     if (!confirm('이 로드맵과 모든 학습 노드가 삭제됩니다. 정말 삭제하시겠어요?')) {
       return;
-    }
+    };
 
-    deleteRoadmap()
+    deleteRoadmap();
   }
 
   const addNode = async () => {
@@ -45,7 +45,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json'},
         body: JSON.stringify({ title: nodeTitle, content: nodeContent})
-      })
+      });
 
       if (response.ok) {
         const newNode = await response.json();
